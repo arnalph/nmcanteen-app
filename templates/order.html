@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Place an Order</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script>
+        function updateTotal() {
+            var items = document.getElementsByName('items');
+            var quantities = document.getElementsByName('quantities');
+            var total = 0;
+            for (var i = 0; i < items.length; i++) {
+                if (items[i].checked) {
+                    var price = parseFloat(items[i].dataset.price);
+                    var quantity = parseInt(quantities[i].value);
+                    total += price * quantity;
+                }
+            }
+            var gst = total * 0.05;
+            var totalWithGst = total + gst;
+            document.getElementById('total').innerText = 'Total: ₹' + total.toFixed(2);
+            document.getElementById('gst').innerText = 'GST (5%): ₹' + gst.toFixed(2);
+            document.getElementById('total_with_gst').innerText = 'Total with GST: ₹' + totalWithGst.toFixed(2);
+        }
+
+        function filterItems() {
+            var input = document.getElementById('search');
+            var filter = input.value.toLowerCase();
+            var cardContainers = document.getElementsByClassName('card-container');
+            for (var i = 0; i < cardContainers.length; i++) {
+                var card = cardContainers[i];
+                if (card.getAttribute('data-item').toLowerCase().indexOf(filter) > -1) {
+                    card.style.display = "";
+                } else {
+                    card.style.display = "none";
+                }
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            fetch('/api/items')
+                .then(response => response.json())
+                .then(items => {
+                    const container = document.getElementById('items-container');
+                    items.forEach(item => {
+                        const cardContainer = document.createElement('div');
+                        cardContainer.className = 'col-md-6 card-container';
+                        cardContainer.setAttribute('data-item', item.name);
+
+                        const card = document.createElement('div');
+                        card.className = 'card';
+
+                        const cardBody = document.createElement('div');
+                        cardBody.className = 'card-body';
+
+                        const cardInfo = document.createElement('div');
+                        cardInfo.className = 'card-info';
+
+                        const cardTitle = document.createElement('h5');
+                        cardTitle.className = 'card-title';
+                        cardTitle.textContent = item.name;
+
+                        const cardText = document.createElement('p');
+                        cardText.className = 'card-text';
+                        cardText.textContent = '₹' + item.price.toFixed(2);
+
+                        cardInfo.appendChild(cardTitle);
+                        cardInfo.appendChild(cardText);
+
+                        const cardActions = document.createElement('div');
+
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.name = 'items';
+                        checkbox.value = item.name;
+                        checkbox.setAttribute('data-price', item.price);
+                        checkbox.addEventListener('change', updateTotal);
+
+                        const quantityInput = document.createElement('input');
+                        quantityInput.type = 'number';
+                        quantityInput.name = 'quantities';
+                        quantityInput.min = '1';
+                        quantityInput.value = '1';
+                        quantityInput.className = 'form-control quantity-input';
+                        quantityInput.addEventListener('change', updateTotal);
+
+                        cardActions.appendChild(checkbox);
+                        cardActions.appendChild(quantityInput);
+
+                        cardBody.appendChild(cardInfo);
+                        cardBody.appendChild(cardActions);
+
+                        card.appendChild(cardBody);
+                        cardContainer.appendChild(card);
+
+                        container.appendChild(cardContainer);
+                    });
+                });
+        });
+    </script>
+</head>
+<body>
+    <header class="header d-flex align-items-center">
+        <div class="container d-flex">
+            <img src="/static/logo.png" alt="Logo">
+        </div>
+    </header>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <h1 class="text-center">Place an Order</h1>
+                {% if error %}
+                <div class="alert alert-danger" role="alert">
+                    {{ error }}
+                </div>
+                {% endif %}
+                <form action="{{ url_for('place_order') }}" method="POST" class="mt-4">
+                    <div class="form-group">
+                        <label for="name">Name:</label>
+                        <input type="text" id="name" name="name" class="form-control" required>
+                    </div>
+                    <div class="form-group"> 
+                        <label for="sap_id">SAP ID (11 Digits)</label> 
+                        <input type="text" class="form-control" id="sap_id"
+                            name="sap_id" pattern="\d{11}" title="Enter 11 digit SAP ID" required> 
+                    </div>
+                    <div class="form-group">
+                        <label for="search">Search for an item:</label>
+                        <input type="text" id="search" class="form-control" onkeyup="filterItems()">
+                    </div>
+                    <div class="scrollable-container row" id="items-container">
+                        <!-- Items will be dynamically populated here -->
+                    </div>
+                    <h5 id="total" class="text-center summary-text mt-4">Total: ₹0.00</h5>
+                    <h5 id="gst" class="text-center summary-text mt-2">GST (5%): ₹0.00</h5>
+                    <h5 id="total_with_gst" class="text-center summary-text mt-2">Total with GST: ₹0.00</h5>
+                    <button type="submit" class="btn btn-primary btn-block mt-4">Submit Order</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrap

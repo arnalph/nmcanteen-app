@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barcode Scanner</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .header {
+            background-color: #343a40;
+            color: white;
+            padding: 10px 0;
+        }
+        .header img {
+            height: 50px;
+            margin-right: 20px;
+        }
+        .header .logout {
+            color: white;
+            text-decoration: none;
+            margin-left: auto;
+        }
+        .container {
+            margin-top: 20px;
+        }
+        .scanner-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        #scanner {
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+        }
+        #barcode-result {
+            margin-top: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+</head>
+<body>
+    <header class="header d-flex align-items-center">
+        <div class="container d-flex">
+            <img src="/static/logo.png" alt="Logo">
+            <a href="{{ url_for('logout') }}" class="btn btn-danger ml-auto">Logout</a>
+        </div>
+    </header>
+    <div class="container">
+        <div class="scanner-container">
+            <h1 class="text-center mb-4">Scan Barcode</h1>
+            <div id="scanner"></div>
+            <div id="barcode-result" class="text-center"></div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            Quagga.init({
+                inputStream: {
+                    name: "Live",
+                    type: "LiveStream",
+                    target: document.querySelector('#scanner'),
+                    constraints: {
+                        width: 400,
+                        height: 300,
+                        facingMode: "environment"
+                    },
+                },
+                decoder: {
+                    readers: ["code_128_reader"]
+                }
+            }, function(err) {
+                if (err) {
+                    console.error(err);
+                    return;
+                }
+                Quagga.start();
+            });
+
+            Quagga.onDetected(function(data) {
+                var code = data.codeResult.code;
+                document.getElementById('barcode-result').innerText = 'Scanned Barcode: ' + code;
+                if (code.length === 8 && !isNaN(code)) {
+                    fetch('/api/order_update_barcode', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ barcode_number: code })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            alert(data.error);
+                        } else {
+                            window.location.href = '/canteen/barcodescan/';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+                } else {
+                    alert('Invalid barcode number');
+                }
+                Quagga.stop();
+            });
+        });
+    </script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

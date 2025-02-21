@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Details</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <header class="header d-flex align-items-center">
+        <div class="container d-flex">
+            <img src="/static/logo.png" alt="Logo">
+            <a href="{{ url_for('logout') }}" class="btn btn-danger ml-auto">Logout</a>
+        </div>
+    </header>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <h1 class="text-center mb-4">Order Details</h1>
+                <div class="card">
+                    <div class="card-body">
+                        <h2 class="text-center mb-4">Order Number: {{ order_number }}</h2>
+                        <p><strong>Name:</strong> {{ name }}</p>
+                        <p><strong>Status:</strong> {{orderStatus}}</p>
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Item</th>
+                                    <th scope="col">Quantity</th>
+                                    <th scope="col">Price</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item, quantity in items %}
+                                <tr>
+                                    <td>{{ item }}</td>
+                                    <td>{{ quantity }}</td>
+                                    <td>₹{{ (menu[item] * int(quantity))|round(2) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        <div class="text-right">
+                            <p><strong>Total:</strong> ₹{{ total_cost }}</p>
+                            <p><strong>GST (5%):</strong> ₹{{ gst_amount|round(2) }}</p>
+                            <p><strong>Total with GST:</strong> ₹{{ total_cost_with_gst|round(2) }}</p>
+                            <p><strong>Timestamp:</strong> {{ timestamp }}</p>
+                        </div>
+                        {% if not status %}
+                        <form action="{{ url_for('update_ready', order_id=order_number) }}" method="post"
+                            class="text-center mt-4">
+                            <button type="submit" class="btn btn-success">Mark as Ready</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Bill</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
+</head>
+<body>
+    <header class="header d-flex align-items-center">
+        <div class="container d-flex">
+            <img src="/static/logo.png" alt="Logo">
+        </div>
+    </header>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <h1 class="text-center mb-4">Order Bill</h1>
+                <div class="card">
+                    <div class="card-body">
+                        <h2 class="text-center mb-4">Order Number: {{ order_number }}</h2>
+                        <h4 class="text-center mb-4">Status: {{ getStatus(status) }}</h4>
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Item</th>
+                                    <th scope="col">Quantity</th>
+                                    <th scope="col">Price</th>
+                                </tr>
+                            </thead>
+                            <div class="h5">
+                                <p>Name: {{ name }}</p>
+                                <p>SAP ID: {{ sap_id }}</p>
+                            </div>
+                            <tbody>
+                                {% for item, quantity in items %}
+                                <tr>
+                                    <td>{{ item }}</td>
+                                    <td>{{ quantity }}</td>
+                                    <td>₹{{ (menu[item] * int(quantity))|round(2) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        <div class="total text-right">
+                            <p>Total: ₹{{ total_cost }}</p>
+                            <p>GST (5%): ₹{{ gst_amount|round(2) }}</p>
+                            <p>Total with GST: ₹{{ total_cost_with_gst|round(2) }}</p>
+                        </div>
+
+                    </div><div class="text-center mt-4"> <svg id="barcode"></svg> </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script> document.addEventListener("DOMContentLoaded", function() { JsBarcode("#barcode", "{{ order_number }}", { format: "CODE128", displayValue: true, fontSize: 18 }); }); </script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

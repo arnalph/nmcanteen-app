@@ -1,0 +1,135 @@
+body {
+    background-color: #f8f9fa;
+}
+
+.header {
+    background-color: #343a40;
+    color: white;
+    padding: 10px 0;
+}
+
+.header img {
+    height: 50px;
+    margin-right: 20px;
+}
+
+.header .logout {
+    color: white;
+    text-decoration: none;
+    margin-left: auto;
+}
+
+.container {
+    margin-top: 10px;
+}
+
+.card {
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.card-body {
+    padding: 30px;
+}
+
+.card-title {
+    font-size: 1.1em;
+    margin-bottom: 5px;
+}
+
+.card-text {
+    margin-bottom: 0;
+    color: #888;
+}
+
+.scrollable-container {
+    height: 400px;
+    overflow-y: auto;
+    padding: 10px;
+    background-color: #ffffff;
+    border-radius: 10px;
+    border: 1px solid #dee2e6;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+.form-control {
+    border-radius: 5px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.quantity-input {
+    max-width: 80px;
+    margin-top: 5px;
+}
+
+.summary-text {
+    font-size: 0.9em;
+    margin-bottom: 5px;
+}
+
+.table th, .table td {
+    vertical-align: middle;
+}
+
+.table thead th {
+    background-color: #007bff;
+    color: #ffffff;
+}
+
+.table tbody tr:hover {
+    background-color: #f1f1f1;
+}
+
+.total {
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+.alert-danger {
+    margin-top: 15px;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+}
+
+h1 {
+    margin-bottom: 20px;
+}
+.scanner-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+#scanner {
+    width: 100%;
+    max-width: 600px;
+    height: 400px;
+}
+#barcode-result {
+    margin-top: 20px;
+    font-size: 1.2em;
+    font-weight: bold;
+}

@@ -1,0 +1,109 @@
+<!-- templates/payment.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Complete Your Payment</title>
+    <!-- Include Bootstrap CSS -->
+    <link rel="stylesheet"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+          integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5/ELAMfRB" 
+          crossorigin="anonymous">
+    <!-- Include any custom CSS after Bootstrap -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .payment-container {
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 30px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .payment-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .payment-button {
+            width: 100%;
+        }
+    </style>
+    <!-- Razorpay Checkout Script -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body>
+    <header class="header d-flex align-items-center">
+        <div class="container d-flex">
+            <img src="/static/logo.png" alt="Logo">
+        </div>
+    </header>
+    <div class="container">
+        <div class="payment-container">
+            <h2 class="payment-header">Complete Your Payment</h2>
+            <p><strong>Order Number:</strong> #{{ order.order_number }}</p>
+            <p><strong>Name:</strong> {{ order.name }}</p>
+            <p><strong>Total Amount:</strong> ₹{{ order.total_cost_with_gst }}</p>
+            <hr>
+            <button id="pay-button" class="btn btn-primary payment-button">Pay with Razorpay</button>
+        </div>
+    </div>
+
+    <script>
+        var options = {
+            "key": "{{ razorpay_key }}",
+            "amount": "{{ order.total_cost_with_gst * 100|int }}", // Amount in paise
+            "currency": "INR",
+            "name": "Canteen",
+            "description": "Order Payment",
+            "image": "", // Optional: Add a logo URL if available
+            "order_id": "{{ razorpay_order_id }}",
+            "handler": function (response){
+                var form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/payment/success';
+
+                var paymentIdInput = document.createElement('input');
+                paymentIdInput.type = 'hidden';
+                paymentIdInput.name = 'razorpay_payment_id';
+                paymentIdInput.value = response.razorpay_payment_id;
+                form.appendChild(paymentIdInput);
+
+                var orderIdInput = document.createElement('input');
+                orderIdInput.type = 'hidden';
+                orderIdInput.name = 'razorpay_order_id';
+                orderIdInput.value = response.razorpay_order_id;
+                form.appendChild(orderIdInput);
+
+                var signatureInput = document.createElement('input');
+                signatureInput.type = 'hidden';
+                signatureInput.name = 'razorpay_signature';
+                signatureInput.value = response.razorpay_signature;
+                form.appendChild(signatureInput);
+
+                document.body.appendChild(form);
+                form.submit();
+            },
+            "prefill": {
+                "name": "{{ order.name }}",
+                "email": "", // Optional: If you have the email
+                "contact": "" // Optional: If you have the contact
+            },
+            "theme": {
+                "color": "#007bff" // Bootstrap primary color
+            }
+        };
+        var rzp = new Razorpay(options);
+        document.getElementById('pay-button').onclick = function(e){
+            rzp.open();
+            e.preventDefault();
+        }
+    </script>
+    <!-- Include Bootstrap JS and dependencies (Optional for Bootstrap components that require JavaScript) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+            integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" 
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-LtrjvnR4Twt/qOuYx01BVNPhHJ16IJYVxLGex3aEt7e3Zt6oMP00AZVMTs3jmO7R"
+            crossorigin="anonymous"></script>
+</body>
+</html>

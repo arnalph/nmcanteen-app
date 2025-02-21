@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Orders</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script>
+        function getStatus(code) {
+            code = Number(code);
+            if (code == 0) return "Ongoing";
+            else if (code == 1) return "Ready";
+            else if (code == 2) return "Received";
+            else return "NA";
+        }
+        document.addEventListener("DOMContentLoaded", function() {
+            fetch('/api/orders_view')
+                .then(response => response.json())
+                .then(data => {
+                    const ordersTable = document.getElementById('orders-table-body');
+                    data.forEach(order => {
+                        const row = document.createElement('tr');
+
+                        const orderNumberCell = document.createElement('td');
+                        const orderLink = document.createElement('a');
+                        orderLink.href = `/orders/details/${order.order_number}`;
+                        orderLink.textContent = order.order_number;
+                        orderNumberCell.appendChild(orderLink);
+                        row.appendChild(orderNumberCell);
+
+                        const nameCell = document.createElement('td');
+                        nameCell.textContent = order.name;
+                        row.appendChild(nameCell);
+
+                        const sapIdCell = document.createElement('td');
+                        sapIdCell.textContent = order.sap_id;
+                        row.appendChild(sapIdCell);
+
+                        const itemsCell = document.createElement('td');
+                        const itemsList = document.createElement('ul');
+                        order.items.forEach(item => {
+                            const listItem = document.createElement('li');
+                            listItem.textContent = `${item[0]} (x${item[1]})`;
+                            itemsList.appendChild(listItem);
+                        });
+                        itemsCell.appendChild(itemsList);
+                        row.appendChild(itemsCell);
+
+                        const totalCostCell = document.createElement('td');
+                        totalCostCell.textContent = `₹${order.total_cost}`;
+                        row.appendChild(totalCostCell);
+
+                        const gstAmountCell = document.createElement('td');
+                        gstAmountCell.textContent = `₹${parseFloat(order.gst_amount).toFixed(2)}`;
+                        row.appendChild(gstAmountCell);
+
+                        const totalCostWithGstCell = document.createElement('td');
+                        totalCostWithGstCell.textContent = `₹${parseFloat(order.total_cost_with_gst).toFixed(2)}`;
+                        row.appendChild(totalCostWithGstCell);
+
+                        const timestampCell = document.createElement('td');
+                        timestampCell.textContent = order.timestamp;
+                        row.appendChild(timestampCell);
+
+                        const completedCell = document.createElement('td');
+                        completedCell.textContent = getStatus(order.status);
+                        row.appendChild(completedCell);
+
+                        ordersTable.appendChild(row);
+                    });
+                });
+        });
+    </script>
+</head>
+<body>
+    <header class="header d-flex align-items-center">
+        <div class="container d-flex">
+            <img src="/static/logo.png" alt="Logo">
+            <!-- Inserted Canteen Orders Button -->
+            <a href="{{ url_for('break_orders') }}" class="btn btn-success ml-auto mr-2">Canteen Orders</a>
+            <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
+        </div>
+    </header>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-12">
+                <h1 class="text-center">Order List</h1>
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <table class="table table-bordered">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th scope="col">Order Number</th>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">SAP ID</th>
+                                    <th scope="col">Items</th>
+                                    <th scope="col">Total Cost</th>
+                                    <th scope="col">GST Amount</th>
+                                    <th scope="col">Total Cost with GST</th>
+                                    <th scope="col">Timestamp</th>
+                                    <th scope="col">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orders-table-body">
+                                <!-- Order rows will be dynamically populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- jQuery and Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <!-- Popper.js is included in Bootstrap bundle -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
