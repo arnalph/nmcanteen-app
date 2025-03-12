@@ -1,5 +1,5 @@
 import sqlite3
-from datetime import datetime
+from datetime import datetime, date
 import random
 import json
 import ast
@@ -14,7 +14,7 @@ def getStatus(code):
     if code == 0:
         status = "Ongoing"
     elif code == 1:
-        status = "Ready"
+        status = "Received"
     elif code == 2:
         status = "Received"
     else:
@@ -37,7 +37,8 @@ def init_db():
             status INTEGER NOT NULL DEFAULT 0,
             sap_id TEXT NOT NULL,
             razorpay_order_id TEXT,
-            payment_status TEXT DEFAULT 'Pending'
+            payment_status TEXT DEFAULT 'Pending',
+            delivery_floor TEXT
         )
     ''')
     cursor.execute('''
@@ -98,7 +99,7 @@ def get_items_from_db():
     conn.close()
     return [{'name': row[0], 'price': row[1]} for row in rows]
 
-def place_order_in_db(name, sap_id, items, quantities):
+def place_order_in_db(name, sap_id, items, quantities, delivery_floor):
     conn = sqlite3.connect('canteen.db')
     cursor = conn.cursor()
     cursor.execute('SELECT item_name, item_price FROM items')
@@ -119,9 +120,9 @@ def place_order_in_db(name, sap_id, items, quantities):
     payment_status = 'Pending'
 
     cursor.execute('''
-        INSERT INTO orders (order_number, name, items, total_cost, gst_amount, total_cost_with_gst, timestamp, status, sap_id, razorpay_order_id, payment_status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (order_number, name, items_json, total_cost, gst_amount, total_cost_with_gst, timestamp, 0, sap_id, razorpay_order_id, payment_status))
+        INSERT INTO orders (order_number, name, items, total_cost, gst_amount, total_cost_with_gst, timestamp, status, sap_id, razorpay_order_id, payment_status, delivery_floor)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (order_number, name, items_json, total_cost, gst_amount, total_cost_with_gst, timestamp, 0, sap_id, razorpay_order_id, payment_status, delivery_floor))
     conn.commit()
     conn.close()
 
@@ -147,7 +148,7 @@ def get_order_details(order_number):
     
     if order:
         (order_number, name, items_json, total_cost, gst_amount, total_cost_with_gst, timestamp, status, sap_id,
-         razorpay_order_id, payment_status) = order
+         razorpay_order_id, payment_status, delivery_floor) = order
         items = json.loads(items_json)
 
         conn = sqlite3.connect('canteen.db')
@@ -170,7 +171,8 @@ def get_order_details(order_number):
             'int': int,
             'orderStatus': getStatus(status),
             'razorpay_order_id': razorpay_order_id,
-            'payment_status': payment_status
+            'payment_status': payment_status,
+            'delivery_floor': delivery_floor
         }
     else:
         return None
@@ -220,13 +222,23 @@ def validate_barcode(barcode_number):
 def get_all_orders():
     conn = sqlite3.connect('canteen.db')
     cursor = conn.cursor()
-    cursor.execute('SELECT * FROM orders WHERE payment_status="Paid" ORDER BY timestamp DESC')
+    
+    # Get today's date in YYYY-MM-DD format
+    today = date.today().strftime('%Y-%m-%d')
+    
+    cursor.execute('''
+        SELECT * FROM orders 
+        WHERE payment_status="Paid" 
+        AND timestamp LIKE ? 
+        ORDER BY timestamp DESC
+    ''', (today + '%',))
+    
     rows = cursor.fetchall()
     conn.close()
     orders = []
     for row in rows:
         (order_number, name, items_json, total_cost, gst_amount, total_cost_with_gst, timestamp, status, sap_id,
-         razorpay_order_id, payment_status) = row
+         razorpay_order_id, payment_status, delivery_floor) = row
         items = json.loads(items_json)
         orders.append({
             'order_number': order_number,
@@ -239,17 +251,24 @@ def get_all_orders():
             'sap_id': sap_id,
             'status': status,
             'razorpay_order_id': razorpay_order_id,
-            'payment_status': payment_status
+            'payment_status': payment_status,
+            'delivery_floor': delivery_floor
         })
     return orders
-
-# functions.py
 
 def get_order_item_counts():
     conn = sqlite3.connect('canteen.db')
     cursor = conn.cursor()
     
-    cursor.execute('SELECT items FROM orders')
+    # Get today's date in YYYY-MM-DD format
+    today = date.today().strftime('%Y-%m-%d')
+    
+    cursor.execute('''
+        SELECT items FROM orders 
+        WHERE payment_status="Paid" 
+        AND timestamp LIKE ?
+    ''', (today + '%',))
+    
     rows = cursor.fetchall()
     conn.close()
     
@@ -267,3 +286,42 @@ def get_order_item_counts():
                 item_counts[item_name] = quantity
     
     return item_counts
+
+def get_order_item_counts_by_floor():
+    conn = sqlite3.connect('canteen.db')
+    cursor = conn.cursor()
+    
+    # Get today's date in YYYY-MM-DD format
+    today = date.today().strftime('%Y-%m-%d')
+    
+    cursor.execute('''
+        SELECT items, delivery_floor FROM orders 
+        WHERE payment_status="Paid" 
+        AND timestamp LIKE ?
+    ''', (today + '%',))
+    
+    rows = cursor.fetchall()
+    conn.close()
+    
+    # Dictionary to store item counts by floor
+    floor_items = {}
+    
+    for row in rows:
+        items_json = row[0]
+        floor = row[1] if row[1] else "Unknown"  # Handle cases where floor might be NULL
+        
+        items = json.loads(items_json)  # items is a list of tuples: [(item_name, quantity), ...]
+        
+        # Initialize floor in dictionary if not exists
+        if floor not in floor_items:
+            floor_items[floor] = {}
+        
+        # Count items for this floor
+        for item_name, quantity in items:
+            quantity = int(quantity)
+            if item_name in floor_items[floor]:
+                floor_items[floor][item_name] += quantity
+            else:
+                floor_items[floor][item_name] = quantity
+    
+    return floor_items

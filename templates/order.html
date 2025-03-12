@@ -11,13 +11,39 @@
             var items = document.getElementsByName('items');
             var quantities = document.getElementsByName('quantities');
             var total = 0;
+            var selectedItemCount = 0;
+
+            // Count selected items and calculate total
             for (var i = 0; i < items.length; i++) {
                 if (items[i].checked) {
-                    var price = parseFloat(items[i].dataset.price);
+                    selectedItemCount++;
                     var quantity = parseInt(quantities[i].value);
+                    
+                    // Enforce 4-unit limit per item
+                    if (quantity > 4) {
+                        quantities[i].value = 4;
+                        alert('Maximum 4 units allowed per item.');
+                        quantity = 4;
+                    }
+
+                    var price = parseFloat(items[i].dataset.price);
                     total += price * quantity;
                 }
             }
+
+            // Enforce 3-item limit
+            if (selectedItemCount > 3) {
+                // Uncheck the last checked item
+                for (var i = items.length - 1; i >= 0; i--) {
+                    if (items[i].checked) {
+                        items[i].checked = false;
+                        alert('You can only select up to 3 items.');
+                        updateTotal(); // Recalculate
+                        return;
+                    }
+                }
+            }
+
             var gst = total * 0.05;
             var totalWithGst = total + gst;
             document.getElementById('total').innerText = 'Total: ₹' + total.toFixed(2);
@@ -82,6 +108,7 @@
                         quantityInput.type = 'number';
                         quantityInput.name = 'quantities';
                         quantityInput.min = '1';
+                        quantityInput.max = '4';  // Added max limit
                         quantityInput.value = '1';
                         quantityInput.className = 'form-control quantity-input';
                         quantityInput.addEventListener('change', updateTotal);
@@ -133,6 +160,18 @@
                     <div class="scrollable-container row" id="items-container">
                         <!-- Items will be dynamically populated here -->
                     </div>
+                    
+                    <!-- New Delivery Floor Dropdown -->
+                    <div class="form-group mt-4">
+                        <label for="delivery_floor">Select delivery floor:</label>
+                        <select class="form-control" id="delivery_floor" name="delivery_floor" required>
+                            <option value="3rd">3rd</option>
+                            <option value="4th">4th</option>
+                            <option value="6th">6th</option>
+                            <option value="7th">7th</option>
+                        </select>
+                    </div>
+                    
                     <h5 id="total" class="text-center summary-text mt-4">Total: ₹0.00</h5>
                     <h5 id="gst" class="text-center summary-text mt-2">GST (5%): ₹0.00</h5>
                     <h5 id="total_with_gst" class="text-center summary-text mt-2">Total with GST: ₹0.00</h5>
@@ -143,4 +182,7 @@
     </div>
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrap
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+    integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+</body>
+</html>

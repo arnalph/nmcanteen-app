@@ -8,17 +8,22 @@ import razorpay
 app = Flask(__name__, static_url_path='')
 razorpay_client = razorpay.Client(auth=("rzp_test_eSD2WPZpkAJ6V4", "isI5FAcqurKYMVMcpFNHAvG0"))
 
-#from flask_wtf.csrf import CSRFProtect
-#csrf = CSRFProtect(app)
-
 app.secret_key = 'your_secret_key'  # Secret key for session management
 
 # Initialize database
 init_db()
 
+# Initialize server status variable
+server_status = 'live'
+
 @app.route('/')
 def home():
-    return render_template('order.html')
+    global server_status
+    if server_status == 'off':
+        return "Not accepting orders right now" #render_template('not_accepting_orders.html')
+    else:
+        return render_template('order.html')
+
 
 @app.route('/api/items')
 def get_items():
@@ -29,6 +34,7 @@ def get_items():
 def place_order():
     name = request.form['name']
     sap_id = request.form['sap_id']
+    delivery_floor = request.form['delivery_floor']
     items = request.form.getlist('items')
     quantities = request.form.getlist('quantities')
 
@@ -38,7 +44,7 @@ def place_order():
         return render_template('order.html', error=error_message)
 
     # Place order and retrieve order details
-    order_number = place_order_in_db(name, sap_id, items, quantities)
+    order_number = place_order_in_db(name, sap_id, items, quantities, delivery_floor)
     order = get_order_details(order_number)
 
     # Calculate amount in paise (Razorpay expects amount in smallest currency unit)
@@ -105,17 +111,22 @@ def show_bill(order_number):
 def view_orders():
     if 'logged_in' not in session:
         return redirect(url_for('login'))
-    return render_template('view_orders.html')
+    global server_status
+    return render_template('view_orders.html', server_status=server_status)
+
 
 @app.route('/canteen/break_orders')
 def break_orders():
     if 'logged_in' not in session:
         return redirect(url_for('login'))
+    
     # Get the aggregated data from the database
     item_counts = get_order_item_counts()
-    return render_template('break_orders.html', item_counts=item_counts)
+    floor_items = get_order_item_counts_by_floor()
+    
+    return render_template('break_orders.html', item_counts=item_counts, floor_items=floor_items)
 
-@app.route('/orders/details/<int:order_id>')
+@app.route('/canteen/orders/details/<int:order_id>')
 def order_details(order_id):
     if 'logged_in' not in session:
         return redirect(url_for('login'))
@@ -170,6 +181,20 @@ def orders_view():
         return redirect(url_for('login'))
     orders = get_all_orders()
     return jsonify(orders)
+
+@app.route('/api/update_server_status', methods=['POST'])
+def update_server_status():
+    if 'logged_in' not in session:
+        return jsonify({'success': False}), 401  # Unauthorized if not logged in
+
+    status = request.form.get('status')
+    global server_status
+    if status in ['live', 'off']:
+        server_status = status
+        return jsonify({'success': True, 'status': server_status})
+    else:
+        return jsonify({'success': False}), 400  # Bad Request for invalid status
+
 
 @app.route('/logout')
 def logout():

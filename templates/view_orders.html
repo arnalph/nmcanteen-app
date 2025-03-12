@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,7 +17,7 @@
             else if (code == 2) return "Received";
             else return "NA";
         }
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("DOMContentLoaded", function () {
             fetch('/api/orders_view')
                 .then(response => response.json())
                 .then(data => {
@@ -26,7 +27,7 @@
 
                         const orderNumberCell = document.createElement('td');
                         const orderLink = document.createElement('a');
-                        orderLink.href = `/orders/details/${order.order_number}`;
+                        orderLink.href = `/canteen/orders/details/${order.order_number}`;
                         orderLink.textContent = order.order_number;
                         orderNumberCell.appendChild(orderLink);
                         row.appendChild(orderNumberCell);
@@ -69,12 +70,49 @@
                         completedCell.textContent = getStatus(order.status);
                         row.appendChild(completedCell);
 
+                        const floorCell = document.createElement('td');
+                        floorCell.textContent = order.delivery_floor;
+                        row.appendChild(floorCell);
+
                         ordersTable.appendChild(row);
                     });
+                    // Toggle Button Functionality
+                    const toggleButton = document.getElementById('server-toggle');
+                    let serverStatus = '{{ server_status }}'; // 'live' or 'off'
+
+                    toggleButton.addEventListener('click', function () {
+                        if (serverStatus === 'live') {
+                            serverStatus = 'off';
+                            toggleButton.textContent = 'Server Off';
+                            toggleButton.classList.remove('btn-outline-success');
+                            toggleButton.classList.add('btn-outline-danger');
+                        } else {
+                            serverStatus = 'live';
+                            toggleButton.textContent = 'Server Live';
+                            toggleButton.classList.remove('btn-outline-danger');
+                            toggleButton.classList.add('btn-outline-success');
+                        }
+
+                        // Send the updated status to the server
+                        const xhr = new XMLHttpRequest();
+                        xhr.open('POST', '/api/update_server_status', true);
+                        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                        xhr.onload = function () {
+                            if (xhr.status === 200) {
+                                console.log('Server status updated successfully');
+                            } else {
+                                console.error('Error updating server status');
+                            }
+                        };
+                        xhr.send('status=' + serverStatus);
+                    });
+
                 });
         });
+
     </script>
 </head>
+
 <body>
     <header class="header d-flex align-items-center">
         <div class="container d-flex">
@@ -89,7 +127,16 @@
             <div class="col-md-12">
                 <h1 class="text-center">Order List</h1>
                 <div class="card mt-4">
+
                     <div class="card-body">
+                        <!-- Toggle Button -->
+                        <div class="text-center mb-3">
+                            <button id="server-toggle"
+                                class="btn {{ 'btn-outline-success' if server_status == 'live' else 'btn-outline-danger' }}">
+                                {{ 'Server Live' if server_status == 'live' else 'Server Off' }}
+                            </button>
+                        </div>
+
                         <table class="table table-bordered">
                             <thead class="thead-dark">
                                 <tr>
@@ -102,6 +149,7 @@
                                     <th scope="col">Total Cost with GST</th>
                                     <th scope="col">Timestamp</th>
                                     <th scope="col">Status</th>
+                                    <th scope="col">Delivery Floor</th>
                                 </tr>
                             </thead>
                             <tbody id="orders-table-body">
@@ -118,4 +166,5 @@
     <!-- Popper.js is included in Bootstrap bundle -->
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>

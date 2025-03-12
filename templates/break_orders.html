@@ -27,7 +27,9 @@
     <div class="container mt-5">
         <h1 class="text-center">Break Orders Dashboard</h1>
         <canvas id="ordersChart" width="300" height="100"></canvas>
-        <!-- Add below the canvas element -->
+        
+        <!-- Overall Item Counts -->
+        <h2 class="mt-5">Overall Item Counts</h2>
         <div class="table-responsive mt-4">
             <table class="table table-striped">
                 <thead>
@@ -47,6 +49,31 @@
             </table>
         </div>
 
+        <!-- Floor-based Item Counts -->
+        <h2 class="mt-5">Items Ordered by Floor</h2>
+        <div class="table-responsive mt-4">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Floor</th>
+                        <th>Item</th>
+                        <th>Quantity Ordered</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for floor, items in floor_items.items() %}
+                        {% for item, count in items.items() %}
+                        <tr>
+                            <td>{{ floor }}</td>
+                            <td>{{ item }}</td>
+                            <td>{{ count }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
         <!-- Scripts -->
         <!-- jQuery and Bootstrap JS (if needed) -->
         <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
@@ -57,37 +84,36 @@
             document.addEventListener('DOMContentLoaded', function () {
                 const ctx = document.getElementById('ordersChart').getContext('2d');
                 // Data passed from Flask
-                const itemCounts = {{ item_counts| tojson
-            }};
+                const itemCounts = {{ item_counts| tojson }};
 
-            // Prepare data for Chart.js
-            const labels = Object.keys(itemCounts);
-            const data = Object.values(itemCounts);
+                // Prepare data for Chart.js
+                const labels = Object.keys(itemCounts);
+                const data = Object.values(itemCounts);
 
-            const ordersChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Number of Orders per Item',
-                        data: data,
-                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    scales: {
-                        yAxes: [{
-                            ticks: {
-                                beginAtZero: true,
-                                precision: 0
-                            }
+                const ordersChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Number of Orders per Item',
+                            data: data,
+                            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
                         }]
+                    },
+                    options: {
+                        scales: {
+                            yAxes: [{
+                                ticks: {
+                                    beginAtZero: true,
+                                    precision: 0
+                                }
+                            }]
+                        }
                     }
-                }
+                });
             });
-        });
         </script>
 </body>
 
